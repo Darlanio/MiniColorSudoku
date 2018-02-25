@@ -1,0 +1,323 @@
+<script>
+var flashcounter;
+
+var colors = [
+    "black", "red", "yellow", "green", "blue"
+];
+
+var sudoku = [ 
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0
+];
+
+var sudokuSolution = [ 
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0
+];
+
+var sudokuRow = [ 
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0
+];
+
+var sudokuCol = [ 
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0
+];
+
+var sudokuBox = [ 
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0,
+    0,0,0,0
+];
+
+function userClick(id)
+{
+  var idstr="" + id;
+	var idint = (idstr[0]-1)*4+(idstr[1]-1);
+	var i=sudoku[idint];
+	var isCorrectSolution=1;
+	
+	i=sudoku[idint];
+	i=(i+1)%5;
+    sudoku[idint]=i;
+  
+	updateUserInterface();
+	for(i=0;i<16;i++) {
+	    if(sudoku[i]!=sudokuSolution[i]) isCorrectSolution=0;
+	}
+	if(isCorrectSolution==1) {
+	    flashcounter=50;
+        setTimeout('flashBackground()',50);
+	}
+}
+
+function flashBackground()
+{
+  document.body.style.backgroundColor=colors[flashcounter%5];
+  flashcounter--;
+	if(flashcounter<0) {
+        setTimeout('main()',50);	
+	} else {
+        setTimeout('flashBackground()',50);
+	}
+}
+
+function clearAllVariables()
+{
+    for(i=0;i<16;i++) {
+        sudoku[i]=0;
+        sudokuSolution[i]=0;
+        sudokuRow[i]=0;
+        sudokuCol[i]=0;
+        sudokuBox[i]=0;
+    }    
+}
+
+function idxBox(i)
+{
+    return (Math.floor(Math.floor(i/4)/2)*2 + Math.floor(Math.floor(i%4)/2));
+}
+
+function isPossible(i,c)
+{
+    return (sudokuRow[c*4+Math.floor(i/4)]==0 && sudokuCol[c*4+i%4]==0 && sudokuBox[c*4+idxBox(i)]==0);
+}
+
+function setSudoku(i,n)
+{
+	sudoku[i]=n+1;
+	sudokuRow[n*4+Math.floor(i/4)]=n+1;
+	sudokuCol[n*4+Math.floor(i%4)]=n+1;
+	sudokuBox[n*4+idxBox(i)]=n+1;
+}
+
+function clearSudoku(i)
+{
+    var n=sudoku[i]-1;
+	sudoku[i]=0;
+	sudokuRow[n*4+Math.floor(i/4)]=0;
+	sudokuCol[n*4+Math.floor(i%4)]=0;
+	sudokuBox[n*4+idxBox(i)]=0;
+}
+
+function anySolution()
+{
+  var i=0;
+	var rv=false;
+	for(;i<16 && sudoku[i]!=0;i++);
+  if(i<16) {
+ 		for(c=0;c<4 && !rv;c++) {
+ 		  if(isPossible(i,c)) {
+ 		    setSudoku(i,c);
+ 		    rv=anySolution();
+ 			  clearSudoku(i);
+      }
+		}
+  } else {
+    rv=true;
+  }
+	return rv;
+}
+
+function anyDuplicateSolutions()
+{
+  var i;
+	var rv=false;
+	for(i=0;i<16 && !rv;i++) {
+	    if(sudoku[i]==0) {
+			for(c=0;c<4 && !rv;c++) {
+				if(isPossible(i,c) && sudokuSolution[i]!=(c+1)) {
+					setSudoku(i,c);
+					rv=anySolution();
+					clearSudoku(i);
+				}
+			}
+		}
+	}
+  return rv;
+}
+
+function resetSudoku()
+{
+	var i;
+	var rnd;
+	var stop;
+
+  var total=16;
+  var blue=4;
+  var green=4;
+  var yellow=4;
+  var red=4;
+
+	for(i=0;i<16;i++) {
+	    sudoku[i]=0;
+		sudokuSolution[i]=0;
+		sudokuRow[i]=0;
+		sudokuCol[i]=0;
+		sudokuBox[i]=0;
+	}
+  for(i=0;i<16;i++) {
+	  rnd=Math.floor(Math.random()*4);
+		stop=0;
+		while(!isPossible(i,rnd) && stop<16) {
+		    rnd=(rnd+1)%4;
+		    stop++;
+		}
+		if(stop<16) {
+	    setSudoku(i,rnd);
+			sudokuSolution[i]=rnd+1;
+		} else {
+      clearAllVariables();
+			i=-1;
+		}
+  }
+	do {
+    do {
+	    rnd=Math.floor(Math.random()*16);
+    } while(sudoku[rnd]==0);
+    switch(sudoku[rnd]) {
+      case 0: red--; break;
+      case 1: yellow--; break;
+      case 2: green--; break;
+      case 3: blue--; break;
+      default: break;
+    }
+	  clearSudoku(rnd);
+    total--;
+	} while(!anyDuplicateSolutions());
+	setSudoku(rnd,sudokuSolution[rnd]-1);
+  switch(sudoku[rnd]) {
+    case 0: red++; break;
+    case 1: yellow++; break;
+    case 2: green++; break;
+    case 3: blue++; break;
+    default: break;
+  }
+  if(red!=0) red=1;
+  if(yellow!=0) yellow=1;
+  if(blue!=0) blue=1;
+  if(green!=0) green=1;
+  if(total<3 || (red+yellow+green+blue)<3) resetSudoku();
+	updateUserInterface();
+}
+
+function updateUserInterface()
+{
+  var x, y, c;
+  var id = "", index=0;
+  for (y=1; y < 5; y++) {
+    for (x=1; x < 5; x++) {
+      id = "" + y.toString () + x.toString ();
+	  index = (id[0]-1)*4+(id[1]-1);
+	  c=sudoku[index];
+      document.getElementById(id).style.backgroundColor=colors[c];
+    }
+  }
+}
+
+function main()
+{
+  document.body.style.backgroundColor="black";
+  resetSudoku();
+  updateUserInterface();
+}
+
+function start ()
+{
+  setTimeout('main()',999);
+}
+
+start ();
+</script>
+<Html>
+  <Head>
+  </Head>
+  <Body bgcolor="000000">
+    <Table border=0 width="100%" height="4%" align=center valign=top>
+      <TR>
+        <TD> 
+        </TD>
+      </TR>
+    </Table>
+    <Table border=1 width="96%" height="93%" align=center valign=center>
+      <TR height="32%">
+        <TD width="32%"> 
+          <Table border=1 width="100%" height="100%">
+            <TR>
+              <TD id="11" onClick='userClick(11);'> &nbsp;
+              </TD>
+              <TD id="12" onClick='userClick(12);'> &nbsp;
+              </TD>
+            </TR>
+            <TR>
+              <TD id="21" onClick='userClick(21);'> &nbsp;
+              </TD>
+              <TD id="22" onClick='userClick(22);'> &nbsp;
+              </TD>
+            </TR>
+          </Table>
+        </TD>
+        <TD width="32%">
+          <Table border=1 width="100%" height="100%">
+            <TR>
+              <TD id="13" onClick='userClick(13);'> &nbsp;
+              </TD>
+              <TD id="14" onClick='userClick(14);'> &nbsp;
+              </TD>
+            </TR>
+            <TR>
+              <TD id="23" onClick='userClick(23);'> &nbsp;
+              </TD>
+              <TD id="24" onClick='userClick(24);'> &nbsp;
+              </TD>
+            </TR>
+          </Table>
+        </TD>
+      </TR>
+      <TR height="32%">
+        <TD width="32%"> 
+          <Table border=1 width="100%" height="100%">
+            <TR>
+              <TD id="31" onClick='userClick(31);'> &nbsp;
+              </TD>
+              <TD id="32" onClick='userClick(32);'> &nbsp;
+              </TD>
+            </TR>
+            <TR>
+              <TD id="41" onClick='userClick(41);'> &nbsp;
+              </TD>
+              <TD id="42" onClick='userClick(42);'> &nbsp;
+              </TD>
+            </TR>
+          </Table>
+        </TD>
+        <TD width="32%">
+          <Table border=1 width="100%" height="100%">
+            <TR>
+              <TD id="33" onClick='userClick(33);'> &nbsp;
+              </TD>
+              <TD id="34" onClick='userClick(34);'> &nbsp;
+              </TD>
+            </TR>
+            <TR>
+              <TD id="43" onClick='userClick(43);'> &nbsp;
+              </TD>
+              <TD id="44" onClick='userClick(44);'> &nbsp;
+              </TD>
+            </TR>
+          </Table>
+        </TD>
+      </TR>
+    </Table>
+  </Body>
+</Html>
