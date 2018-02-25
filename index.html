@@ -110,28 +110,31 @@ function clearSudoku(i)
 	sudokuBox[n*4+idxBox(i)]=0;
 }
 
+
 function anySolution()
 {
-  var i=0;
+    var i=0;
+	var c;
 	var rv=false;
 	for(;i<16 && sudoku[i]!=0;i++);
-  if(i<16) {
- 		for(c=0;c<4 && !rv;c++) {
- 		  if(isPossible(i,c)) {
- 		    setSudoku(i,c);
- 		    rv=anySolution();
- 			  clearSudoku(i);
-      }
-		}
-  } else {
-    rv=true;
-  }
+    if(i<16) {
+   		for(c=0;c<4 && !rv;c++) {
+   		    if(isPossible(i,c)) {
+   			    setSudoku(i,c);
+   			    rv=anySolution();
+   				clearSudoku(i);
+            }
+  		}
+    } else {
+        rv=true;
+    }
 	return rv;
 }
 
 function anyDuplicateSolutions()
 {
-  var i;
+    var i;
+	var c;
 	var rv=false;
 	for(i=0;i<16 && !rv;i++) {
 	    if(sudoku[i]==0) {
@@ -144,7 +147,7 @@ function anyDuplicateSolutions()
 			}
 		}
 	}
-  return rv;
+    return rv;
 }
 
 function resetSudoku()
